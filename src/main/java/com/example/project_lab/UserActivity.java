@@ -21,10 +21,8 @@ public abstract class UserActivity {
         this.name = name;
     }
 
-    // Method polymorphic yang harus di-override oleh subclass
     public abstract void markCompleted();
 
-    // Bisa juga buat reset status
     public void resetStatus() {
         status = false;
     }

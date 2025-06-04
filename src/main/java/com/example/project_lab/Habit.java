@@ -1,6 +1,5 @@
 package com.example.project_lab;
 
-// Habit.java
 import java.time.LocalDate;
 
 public class Habit extends UserActivity {
@@ -22,7 +21,10 @@ public class Habit extends UserActivity {
     @Override
     public void markCompleted() {
         this.status = true;
-        System.out.println(name + " ditandai selesai pada " + date);
+    }
+
+    public void markCompletedInternal() {
+        this.status = true;
     }
 
     public void resetStatusIfNewDay(LocalDate today) {
@@ -32,4 +34,3 @@ public class Habit extends UserActivity {
         }
     }
 }
-
