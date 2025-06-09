@@ -6,16 +6,18 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
-
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 public class HabitTrackerApp extends Application {
 
     private UserService userService;
     private HabitStorageService habitStorageService;
-    private User currentUser;
+    private User currentUser ;
     private HabitManager habitManager;
 
     private Stage primaryStage;
@@ -56,8 +58,8 @@ public class HabitTrackerApp extends Application {
             String password = passwordInput.getText();
             Optional<User> userOpt = userService.signIn(username, password);
             if (userOpt.isPresent()) {
-                currentUser = userOpt.get();
-                habitManager = new HabitManager(currentUser.getUsername(), habitStorageService);
+                currentUser  = userOpt.get();
+                habitManager = new HabitManager(currentUser .getUsername(), habitStorageService);
                 showMainAppScene();
             } else {
                 errorLabel.setText("Username atau password salah.");
@@ -129,12 +131,13 @@ public class HabitTrackerApp extends Application {
     }
 
     private void showMainAppScene() {
-        primaryStage.setTitle("Habit Tracker - " + currentUser.getUsername());
+        primaryStage.setTitle("Habit Tracker - " + currentUser .getUsername());
 
         TextField habitInput = new TextField();
         habitInput.setPromptText("Masukkan nama kebiasaan");
 
         Button addButton = new Button("Tambah Habit");
+        Button calendarButton = new Button("Kalender & Riwayat");
 
         habitDisplayBox = new VBox(5);
         habitDisplayBox.setPadding(new Insets(10));
@@ -152,23 +155,23 @@ public class HabitTrackerApp extends Application {
             }
         });
 
+        calendarButton.setOnAction(e -> showCalendarScene());
+
         Button logoutButton = new Button("Logout");
         logoutButton.setOnAction(e -> {
-            currentUser = null;
+            currentUser  = null;
             habitManager = null;
             showLoginScene();
         });
 
-
-        HBox inputLayout = new HBox(10, habitInput, addButton);
+        HBox inputLayout = new HBox(10, habitInput, addButton, calendarButton);
         inputLayout.setPadding(new Insets(10));
 
-        HBox topBarLayout = new HBox(10, new Label("User: " + currentUser.getUsername()), logoutButton);
+        HBox topBarLayout = new HBox(10, new Label(":User  " + currentUser .getUsername()), logoutButton);
         topBarLayout.setAlignment(Pos.CENTER_RIGHT);
         topBarLayout.setPadding(new Insets(5));
 
-
-        VBox mainLayout = new VBox(10, topBarLayout, inputLayout, /*resetButton,*/ new ScrollPane(habitDisplayBox));
+        VBox mainLayout = new VBox(10, topBarLayout, inputLayout, new ScrollPane(habitDisplayBox));
         mainLayout.setPadding(new Insets(10));
 
         Scene scene = new Scene(mainLayout, 450, 400);
@@ -183,8 +186,6 @@ public class HabitTrackerApp extends Application {
         for (Habit habit : habitManager.getHabitList()) {
             CheckBox cb = new CheckBox(habit.getName() + " (" + habit.getDate().toString() + ")");
             cb.setSelected(habit.isCompleted());
-
-            boolean isPastHabit = habit.getDate().isBefore(LocalDate.now());
 
             cb.setOnAction(e -> {
                 if (!habit.getDate().isBefore(LocalDate.now()) || habit.getDate().isEqual(LocalDate.now())) {
@@ -201,5 +202,47 @@ public class HabitTrackerApp extends Application {
 
     public static void main(String[] args) {
         launch(args);
+    }
+
+    private void showCalendarScene() {
+        CalenderView calendarView = new CalenderView(habitManager);
+        // Set up the calendar scene
+        calendarView.getDatePicker().setOnAction(e -> {
+            LocalDate selectedDate = calendarView.getDatePicker().getValue();
+            calendarView.updateHabitsForSelectedDate(selectedDate);
+        });
+        calendarView.getSummaryTypeComboBox().setOnAction(e -> {
+            calendarView.updateCalendar();
+        });
+        // Initialize the calendar view with the current date
+        calendarView.updateHabitsForSelectedDate(calendarView.getDatePicker().getValue());
+        calendarView.updateCalendar();
+        Scene calendarScene = new Scene(calendarView, 400, 300);
+        primaryStage.setScene(calendarScene);
+        primaryStage.setTitle("Kalender & Riwayat");
+    }
+
+    public static void createHabitRows(List<Habit> habitsForDate, VBox habitListBox) {
+        for (Habit habit : habitsForDate) {
+            HBox habitRow = new HBox(10);
+            habitRow.setPadding(new Insets(8));
+            habitRow.setBackground(new Background(new BackgroundFill(
+                    Color.web("#f9fafb"), new CornerRadii(8), Insets.EMPTY)));
+            habitRow.setBorder(new Border(new BorderStroke(
+                    Color.web("#e5e7eb"), BorderStrokeStyle.SOLID,
+                    new CornerRadii(8), BorderWidths.DEFAULT)));
+            habitRow.setPrefWidth(380);
+            Circle statusCircle = new Circle(8);
+            if (habit.isCompleted()) {
+                statusCircle.setFill(Color.web("#10b981"));
+            } else {
+                statusCircle.setFill(Color.web("#9ca3af"));
+            }
+            Label habitNameLabel = new Label(habit.getName());
+            habitRow.getChildren().addAll(statusCircle, habitNameLabel);
+            habitListBox.getChildren().add(habitRow);
+        }
+
+
     }
 }
